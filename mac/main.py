@@ -45,13 +45,36 @@ def move_mouse(stop_event, text_var, counter_var, start_perf_counter):
                 stop_event.set()
         time.sleep(0.1)  # Sleep for a short while before checking again
 
+def move_vol_control(stop_event, text_var, counter_var, start_perf_counter):
+    counter = 0
+    next_move_time = 5  # Move the mouse when this time is reached
+    while not stop_event.is_set():
+        elapsed_time = time.perf_counter() - start_perf_counter
+        if elapsed_time >= next_move_time:
+            try:
+                pyautogui.press('volumedown')
+                time.sleep(0.5)
+                pyautogui.press('volumeup')
+                counter += 1
+                counter_var.set(f"Volume control has changed {counter} times")
+                text_var.set("Mouse moving")
+                logging.info("Mouse moved successfully.")
+                next_move_time += 5
+            except pyautogui.FailSafeException:
+                logging.warning("FailSafeException triggered, moving mouse to center.")
+                text_var.set("FailSafeException, moved to center")
+                stop_event.set()
+        time.sleep(0.1)  # Sleep for a short while before checking again
+
+
+
 # Main function for GUI
 def main():
     init_logger()
 
     # Tkinter GUI setup
     root = tk.Tk()
-    root.title("Mouse Mover for macOS")
+    root.title("Mouse Mover for macOS/Windows")
 
     frame = ttk.Frame(root, padding="10")
     frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -80,9 +103,12 @@ def main():
         start_perf_counter = time.perf_counter()
         threading.Thread(target=update_time, args=(start_perf_counter, time_var, stop_event)).start()
         threading.Thread(target=move_mouse, args=(stop_event, text_var, counter_var, start_perf_counter)).start()
-        if platform.system() == 'Darwin':
+        if platform.system() == 'Darwin' or platform.system() == 'Linux':
+            threading.Thread(target=move_mouse, args=(stop_event, text_var, counter_var, start_perf_counter)).start()
             caffeinate_process = subprocess.Popen(['caffeinate'])
             logging.info("Caffeinate command started.")
+        else:
+            threading.Thread(target=move_vol_control(), args=(stop_event, text_var, counter_var, start_perf_counter)).start()
 
     def stop_moving():
         stop_event.set()
