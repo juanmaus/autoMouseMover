@@ -108,7 +108,7 @@ def main():
             caffeinate_process = subprocess.Popen(['caffeinate'])
             logging.info("Caffeinate command started.")
         else:
-            threading.Thread(target=move_vol_control(), args=(stop_event, text_var, counter_var, start_perf_counter)).start()
+            threading.Thread(target=move_vol_control, args=(stop_event, text_var, counter_var, start_perf_counter)).start()
 
     def stop_moving():
         stop_event.set()
